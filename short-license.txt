@@ -1,0 +1,1 @@
+AGPLv3: https://github.com/iomintz/AoC-Bot
