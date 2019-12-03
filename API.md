@@ -21,7 +21,7 @@ as UTC Unix time, in whole seconds, disregarding leap seconds, as a string.
 ## Private Leaderboards
 
 ```
-GET /:event/leaderboard/private/view/:leaderboard_id.json
+GET https://adventofcode.com/:event/leaderboard/private/view/:leaderboard_id.json
 ```
 
 `HEAD` is also supported.
