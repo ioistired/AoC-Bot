@@ -63,17 +63,17 @@ async def leaderboard(client):
 	"""
 
 	now = time.time()
-	last_modified = os.stat('leaderboard.json').st_mtime
+	try:
+		last_modified = os.stat('leaderboard.json').st_mtime
+	except FileNotFoundError:
+		logger.info('Leaderboard file not found, creating.')
+		return await refresh_saved_leaderboard(client)
+
 	if now - last_modified > RATE_LIMIT:
 		return await refresh_saved_leaderboard(client)
 
 	# we've fetched it recently
-
-	try:
-		return load_leaderboard()
-	except FileNotFoundError:
-		print('leaderboard file not found, creating')
-		return await refresh_saved_leaderboard(client)
+	return load_leaderboard()
 
 async def refresh_saved_leaderboard(client):
 	"""save the latest leaderboard to disk"""
