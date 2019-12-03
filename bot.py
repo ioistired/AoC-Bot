@@ -77,7 +77,7 @@ async def scores_command(event):
 	leaderboard = await aoc.leaderboard(event.client)
 	await event.respond(aoc.format_leaderboard(leaderboard))
 
-async def get_client():
+def get_client():
 	with open('config.py') as f:
 		config = eval(f.read(), {})
 
@@ -97,7 +97,7 @@ async def get_client():
 	return client
 
 async def main():
-	client = await get_client()
+	client = get_client()
 
 	await client.start(bot_token=client.config['api_token'])
 	client.user = await client.get_me()
@@ -106,7 +106,7 @@ async def main():
 		try:
 			await client._run_until_disconnected()
 		finally:
-			client.disconnect()
+			await client.disconnect()
 
 if __name__ == '__main__':
 	asyncio.run(main())
