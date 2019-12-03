@@ -6,6 +6,10 @@ To install it:
 - `pip install -r requirements.txt` (preferably in a [virtual env](https://docs.python.org/3/library/venv.html))
 - `./bot.py`
 
+## Commands
+
+`/scores` will show the members of the leaderboard, sorted by who has the most stars. *Unlike the website*,
+completion time is not considered.
 
 ## License
 
