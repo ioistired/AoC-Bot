@@ -91,7 +91,7 @@ async def get_client():
 		headers={
 			'Cookie': 'session=' + client.config['aoc_session_cookie'],
 		},
-		cookie_jar = aiohttp.DummyCookieJar(),  # suppress normal cookie handling,
+		cookie_jar = aiohttp.DummyCookieJar(),  # suppress normal cookie handling
 	)
 
 	return client

@@ -24,6 +24,8 @@ as UTC Unix time, in whole seconds, disregarding leap seconds, as a string.
 GET /:event/leaderboard/private/view/:leaderboard_id.json
 ```
 
+`HEAD` is also supported.
+
 ### URL Parameters
 
 | Field            | Type        |
