@@ -16,7 +16,7 @@
 # along with AoC Bot.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import contextlib
+import datetime as dt
 import logging
 from functools import wraps
 
@@ -27,6 +27,28 @@ import aoc
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bot')
+
+def seconds_until_next_puzzle():
+	now = dt.datetime.utcnow()
+	est_now = now - dt.timedelta(hours=5)
+	tomorrow = est_now + dt.timedelta(days=1)
+	next_midnight_est = dt.datetime.combine(tomorrow, dt.time(5, 0))
+	if next_midnight_est.month != 12:
+		return None
+	return (next_midnight_est - now).total_seconds()
+
+async def notify_loop(client):
+	chat_id = client.config.get('aoc_notify_chat_id')
+	if not chat_id:
+		return
+
+	while True:
+		seconds = seconds_until_next_puzzle()
+		if seconds is None:
+			return
+		print('sleeping', seconds, 'seconds')
+		await asyncio.sleep(seconds)
+		await client.send_message(chat_id, "Oh shirt, a new puzzle! Let's get this gingerbread!")
 
 def is_command(event):
 	# this is insanely complicated kill me now
@@ -103,10 +125,12 @@ async def main():
 	client.user = await client.get_me()
 	async with client.http:
 		await aoc.login(client)
+		t = asyncio.create_task(notify_loop(client))
 		try:
 			await client._run_until_disconnected()
 		finally:
 			await client.disconnect()
+			t.cancel()
 
 if __name__ == '__main__':
 	asyncio.run(main())
