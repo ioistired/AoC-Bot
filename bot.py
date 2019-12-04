@@ -19,6 +19,7 @@ import asyncio
 import datetime as dt
 import logging
 from functools import wraps
+from pathlib import Path
 
 import aiohttp
 from telethon import TelegramClient, errors, events, tl
@@ -93,10 +94,17 @@ async def license_command(event):
 	with open('short-license.txt') as f:
 		await event.respond(f.read())
 
-@register_event(events.NewMessage(pattern=r'^/scores'))
+@register_event(events.NewMessage(pattern=r'(?a)^/scores(?:@\w+)?(?:\s+(\d+))?'))
 @command_required
 async def scores_command(event):
-	leaderboard = await aoc.leaderboard(event.client)
+	try:
+		leaderboard = await aoc.leaderboard(event.client, event.pattern_match.group(1))
+	except aiohttp.ClientResponseError as exc:
+		if exc.status == 404:
+			await event.respond('No leaderboard found for that year.')
+			return
+		raise
+
 	await event.respond(aoc.format_leaderboard(leaderboard))
 
 def get_client():
@@ -124,6 +132,7 @@ async def main():
 	await client.start(bot_token=client.config['api_token'])
 	client.user = await client.get_me()
 	async with client.http:
+		Path('leaderboards').mkdir(exist_ok=True)
 		await aoc.login(client)
 		t = asyncio.create_task(notify_loop(client))
 		try:

@@ -11,7 +11,8 @@ Python 3.7+ is required.
 ## Commands
 
 `/scores` will show the members of the leaderboard, sorted by who has the most stars. *Unlike the website*,
-completion time is not considered.
+completion time is not considered. If a year is provided, it shows scores for that year. Otherwise, it shows the latest
+scores.
 
 ## License
 

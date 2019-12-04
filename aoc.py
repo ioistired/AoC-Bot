@@ -15,6 +15,7 @@
 
 import asyncio
 import collections
+import datetime as dt
 import io
 import json
 import logging
@@ -23,6 +24,7 @@ import os
 import sys
 import time
 import typing
+from pathlib import Path
 
 from yarl import URL
 
@@ -57,8 +59,7 @@ def format_leaderboard(leaderboard):
 	out.write(owner(leaderboard)['name'])
 	out.write("'s ")
 	out.write(str(year))
-	out.write(' leaderboard')
-	out.write('](')
+	out.write(' leaderboard](')
 	out.write('https://adventofcode.com/')
 	out.write(year)
 	out.write('/leaderboard/private/view/')
@@ -75,37 +76,37 @@ def format_leaderboard(leaderboard):
 
 	return out.getvalue()
 
-async def leaderboard(client):
+async def leaderboard(client, event=None):
 	"""Fetch the latest leaderboard from the web if and only if it has not been fetched recently.
 	Otherwise retrieve from disk.
 	"""
 
 	now = time.time()
+	event = event or most_recent_event()
 	try:
-		last_modified = os.stat('leaderboard.json').st_mtime
+		last_modified = os.stat(f'leaderboards/{event}.json').st_mtime
 	except FileNotFoundError:
-		logger.info('Leaderboard file not found, creating.')
-		return await refresh_saved_leaderboard(client)
+		return await refresh_saved_leaderboard(client, event)
 
 	if now - last_modified > RATE_LIMIT:
-		return await refresh_saved_leaderboard(client)
+		return await refresh_saved_leaderboard(client, event)
 
 	# we've fetched it recently
-	return load_leaderboard()
+	return load_leaderboard(event)
 
-async def refresh_saved_leaderboard(client):
+async def refresh_saved_leaderboard(client, event=None):
 	"""save the latest leaderboard to disk"""
-	leaderboard = await fetch_leaderboard(client)
+	leaderboard = await fetch_leaderboard(client, event)
 	save_leaderboard(leaderboard)
 	return leaderboard
 
 def save_leaderboard(leaderboard):
-	with open('leaderboard.json', 'w') as f:
+	with open(Path('leaderboards') / (leaderboard['event'] + '.json'), 'w') as f:
 		json.dump(leaderboard, f, indent=4, ensure_ascii=False)
 		f.write('\n')
 
-def load_leaderboard():
-	with open('leaderboard.json') as f:
+def load_leaderboard(event):
+	with open(Path('leaderboards') / (event + '.json')) as f:
 		return json.load(f)
 
 def validate_headers(resp):
@@ -119,17 +120,25 @@ def validate_headers(resp):
 		resp.raise_for_status()
 
 async def login(client):
-	async with client.http.head(client.config['aoc_leaderboard_url'], allow_redirects=False) as resp:
+	async with client.http.head(leaderboard_url(client), allow_redirects=False) as resp:
 		validate_headers(resp)
 
-async def fetch_leaderboard(client):
-	logger.debug('Fetching leaderboard over HTTP')
+async def fetch_leaderboard(client, event=None):
+	logger.debug('Fetching {event or "most recent"} leaderboard over HTTP')
 	async with client.http.get(
-		client.config['aoc_leaderboard_url'],
+		leaderboard_url(client, event),
 		allow_redirects=False,  # redirects are used as error codes
 	) as resp:
 		validate_headers(resp)
 		return await resp.json()
+
+def most_recent_event():
+	now = dt.datetime.utcnow() - dt.timedelta(hours=5)  # ehh, who cares about DST
+	return str(now.year if now.month == 12 else now.year - 1)
+
+def leaderboard_url(client, event=None):
+	event = event or most_recent_event()
+	return f'https://adventofcode.com/{event}/leaderboard/private/view/{client.config["aoc_leaderboard_id"]}.json'
 
 if __name__ == '__main__':
 	main()

@@ -1,4 +1,7 @@
+# legacy
 leaderboard.json
+# new, one per year
+leaderboards/
 *.session
 *.session-journal
 __pycache__
