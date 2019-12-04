@@ -46,7 +46,7 @@ async def notify_loop(client):
 		seconds = seconds_until_next_puzzle()
 		if seconds is None:
 			return
-		print('sleeping', seconds, 'seconds')
+		logger.debug('sleeping', seconds, 'seconds until next puzzle')
 		await asyncio.sleep(seconds)
 		await client.send_message(chat_id, "Oh shirt, a new puzzle! Let's get this gingerbread!")
 
