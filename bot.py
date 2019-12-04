@@ -29,14 +29,14 @@ import aoc
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bot')
 
-def seconds_until_next_puzzle():
+def next_puzzle_time():
 	now = dt.datetime.utcnow()
 	est_now = now - dt.timedelta(hours=5)
+	if est_now.month != 12:
+		return None
 	tomorrow = est_now + dt.timedelta(days=1)
 	next_midnight_est = dt.datetime.combine(tomorrow, dt.time(5, 0))
-	if next_midnight_est.month != 12:
-		return None
-	return (next_midnight_est - now).total_seconds()
+	return next_midnight_est
 
 async def notify_loop(client):
 	chat_id = client.config.get('aoc_notify_chat_id')
@@ -44,12 +44,12 @@ async def notify_loop(client):
 		return
 
 	while True:
-		seconds = seconds_until_next_puzzle()
-		if seconds is None:
+		next_puzzle = next_puzzle_time()
+		if next_puzzle is None:
 			return
-		logger.debug('sleeping', seconds, 'seconds until next puzzle')
-		await asyncio.sleep(seconds)
-		await client.send_message(chat_id, "Oh shirt, a new puzzle! Let's get this gingerbread!")
+		await asyncio.sleep((next_puzzle - now).total_seconds())
+		link = f'https://adventofcode.com/{next_puzzle.year}/day/{next_puzzle.day-1}'
+		await client.send_message(chat_id, f"Oh shirt, [a new puzzle]({link})! Let's get this gingerbread!")
 
 def is_command(event):
 	# this is insanely complicated kill me now
