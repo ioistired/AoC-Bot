@@ -53,12 +53,17 @@ def format_leaderboard(leaderboard):
 	scores = score_leaderboard(leaderboard)
 	year = leaderboard['event']
 
-	out.write(str(year))
-	out.write(' leaderboard\n')
-
-	out.write('Owner: ')
+	out.write('[')
 	out.write(owner(leaderboard)['name'])
-	out.write('\n')
+	out.write("'s ")
+	out.write(str(year))
+	out.write(' leaderboard')
+	out.write('](')
+	out.write('https://adventofcode.com/')
+	out.write(year)
+	out.write('/leaderboard/private/view/')
+	out.write(leaderboard['owner_id'])
+	out.write(')\n')
 
 	for score, members in scores.items():
 		sorted_members = sorted(members, key=lambda member: int(member['id']))
