@@ -18,6 +18,7 @@
 import asyncio
 import datetime as dt
 import logging
+import operator
 from functools import wraps
 from pathlib import Path
 
@@ -39,8 +40,10 @@ def next_puzzle_time():
 	return next_midnight_est
 
 async def notify_loop(client):
-	chat_id = client.config.get('aoc_notify_chat_id')
+	chat_id = client.config.get('aoc_chat_id')
 	if not chat_id:
+		return
+	if not client.config.get('aoc_notify'):
 		return
 
 	while True:
@@ -75,6 +78,26 @@ def command_required(f):
 		raise events.StopPropagation
 	return handler
 
+def privileged_chat_required(f):
+	@wraps(f)
+	async def handler(event):
+		privileged_chat_id = event.client.config.get('aoc_chat_id')
+		if not privileged_chat_id:  # none is configured, allow all users
+			await f(event)
+			return
+
+		message = event.message
+		if not isinstance(message.to_id, tl.types.PeerChat):
+			return
+
+		privileged_chat = await event.client(tl.functions.messages.GetFullChatRequest(chat_id=privileged_chat_id))
+		if message.from_id not in map(operator.attrgetter('id'), privileged_chat.users):
+			return
+
+		await f(event)
+
+	return handler
+
 # so that we can register them all in the correct order later (globals() is not guaranteed to be ordered)
 event_handlers = []
 def register_event(*args, **kwargs):
@@ -95,6 +118,7 @@ async def license_command(event):
 		await event.respond(f.read())
 
 @register_event(events.NewMessage(pattern=r'(?a)^/scores(?:@\w+)?(?:\s+(\d+))?'))
+@privileged_chat_required
 @command_required
 async def scores_command(event):
 	try:

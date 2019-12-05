@@ -16,8 +16,9 @@
 	'aoc_leaderboard_id': ...,
 	# your session cookie obtained after signing in to AoC
 	'aoc_session_cookie': ...,
-
-	# an integer ID of a chat to notify on new puzzles
-	# if None or not set, notifications will be disabled.
-	'aoc_notify_chat_id': None,
+	# Only members of this chat ID will be able to access score commands.
+	# If set to None, or not set, anyone will be able to access the configured private leaderboard.
+	'aoc_chat_id': None,
+	# Whether to send a message to the above chat ID whenever a new puzzle is expected to release.
+	'aoc_notify': False,
 }
