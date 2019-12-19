@@ -26,6 +26,7 @@ import aiohttp
 from telethon import TelegramClient, errors, events, tl
 
 import aoc
+import utils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('bot')
@@ -54,7 +55,20 @@ async def notify_loop(client):
 		link = f'https://adventofcode.com/{next_puzzle.year}/day/{next_puzzle.day-1}'
 		await client.send_message(chat_id, f"Oh shirt, [a new puzzle]({link})! Let's get this gingerbread!")
 
-def is_command(event):
+def check(predicate):
+	predicate = utils.ensure_corofunc(predicate)
+	def deco(wrapped_handler):
+		@wraps(wrapped_handler)
+		async def handler(event):
+			if not await predicate(event):
+				return
+			await wrapped_handler(event)
+			raise events.StopPropagation
+		return handler
+	return deco
+
+@check
+def command_required(event):
 	# this is insanely complicated kill me now
 	message = event.message
 	username = getattr(event.client.user, 'username', None)
@@ -69,34 +83,25 @@ def is_command(event):
 			return True
 	return False
 
-def command_required(f):
-	@wraps(f)
-	async def handler(event):
-		if not is_command(event):
-			return
-		await f(event)
-		raise events.StopPropagation
-	return handler
+@check
+def owner_required(event):
+	return event.sender.id == event.client.config['owner_id']
 
-def privileged_chat_required(f):
-	@wraps(f)
-	async def handler(event):
-		privileged_chat_id = event.client.config.get('aoc_chat_id')
-		if not privileged_chat_id:  # none is configured, allow all users
-			await f(event)
-			return
+@check
+async def privileged_chat_required(event):
+	privileged_chat_id = event.client.config.get('aoc_chat_id')
+	if not privileged_chat_id:  # none is configured, allow all users
+		return True
 
-		message = event.message
-		if not isinstance(message.to_id, tl.types.PeerChat):
-			return
+	message = event.message
+	if not isinstance(message.to_id, tl.types.PeerChat):
+		return False
 
-		privileged_chat = await event.client(tl.functions.messages.GetFullChatRequest(chat_id=privileged_chat_id))
-		if message.from_id not in map(operator.attrgetter('id'), privileged_chat.users):
-			return
+	privileged_chat = await event.client(tl.functions.messages.GetFullChatRequest(chat_id=privileged_chat_id))
+	if message.from_id not in map(operator.attrgetter('id'), privileged_chat.users):
+		return False
 
-		await f(event)
-
-	return handler
+	return True
 
 # so that we can register them all in the correct order later (globals() is not guaranteed to be ordered)
 event_handlers = []

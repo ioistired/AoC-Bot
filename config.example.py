@@ -7,8 +7,7 @@
 	# pick anything?
 	'session_name': 'anon',
 
-	# @mention of this bot's admin
-	'owner': ...,
+	'owner_id': ...,
 
 	# the ID of a private leaderboard
 	# get this from https://adventofcode.com/2019/leaderboard/private, and [View] any leaderboard you're a member of.
