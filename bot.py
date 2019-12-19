@@ -23,6 +23,7 @@ from functools import wraps
 from pathlib import Path
 
 import aiohttp
+from jishaku.repl import AsyncCodeExecutor
 from telethon import TelegramClient, errors, events, tl
 
 import aoc
@@ -121,6 +122,22 @@ async def ping_command(event):
 async def license_command(event):
 	with open('short-license.txt') as f:
 		await event.respond(f.read())
+
+@register_event(events.NewMessage(pattern=r'^/py(?:@[A-Za-z0-9_]+)?(?:\s+(.+))'))
+@owner_required
+@command_required
+async def python_command(event):
+	reply_to = event.message
+	dest = await event.get_input_chat()
+	async for x in AsyncCodeExecutor(event.pattern_match.group(1), arg_dict=dict(event=event)):
+		if type(x) is not str:
+			x = repr(x)
+		if x == '':
+			x = repr(x)
+
+		reply_to = await event.client.send_message(dest, x, reply_to=reply_to)
+
+	await event.reply('✅')
 
 @register_event(events.NewMessage(pattern=r'(?a)^/scores(?:@\w+)?(?:\s+(\d+))?'))
 @privileged_chat_required
