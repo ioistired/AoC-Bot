@@ -35,7 +35,7 @@ logger = logging.getLogger('bot')
 def next_puzzle_time():
 	now = dt.datetime.utcnow()
 	est_now = now - dt.timedelta(hours=5)
-	if est_now.month != 12:
+	if not (est_now.month == 12 and est_now.day <= 25):
 		return None
 	tomorrow = est_now + dt.timedelta(days=1)
 	next_midnight_est = dt.datetime.combine(tomorrow, dt.time(5, 0))
