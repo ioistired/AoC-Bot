@@ -19,7 +19,7 @@ import asyncio
 import datetime as dt
 import logging
 import operator
-from functools import wraps
+from functools import partial, wraps
 from pathlib import Path
 
 import aiohttp
@@ -52,7 +52,7 @@ async def notify_loop(client):
 		next_puzzle = next_puzzle_time()
 		if next_puzzle is None:
 			return
-		await asyncio.sleep((next_puzzle - now).total_seconds())
+		await asyncio.sleep((next_puzzle - dt.datetime.utcnow()).total_seconds())
 		link = f'https://adventofcode.com/{next_puzzle.year}/day/{next_puzzle.day-1}'
 		await client.send_message(chat_id, f"Oh shirt, [a new puzzle]({link})! Let's get this gingerbread!")
 
@@ -180,12 +180,15 @@ async def main():
 	async with client.http:
 		Path('leaderboards').mkdir(exist_ok=True)
 		await aoc.login(client)
-		t = asyncio.create_task(notify_loop(client))
+
+		notifier = partial(notify_loop, client)
+		notify_task = asyncio.create_task(utils.task_wrapper(notifier))
+		client.notify_task = notify_task  # for future introspection
+
 		try:
-			await client._run_until_disconnected()
+			await client.run_until_disconnected()
 		finally:
-			await client.disconnect()
-			t.cancel()
+			notify_task.cancel()
 
 if __name__ == '__main__':
 	asyncio.run(main())
