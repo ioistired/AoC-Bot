@@ -123,7 +123,7 @@ async def license_command(event):
 	with open('short-license.txt') as f:
 		await event.respond(f.read())
 
-@register_event(events.NewMessage(pattern=r'^/py(?:@[A-Za-z0-9_]+)?(?:\s+(.+))'))
+@register_event(events.NewMessage(pattern=r'(?s)^/py(?:@[A-Za-z0-9_]+)?(?:\s+(.+))'))
 @owner_required
 @command_required
 async def python_command(event):
